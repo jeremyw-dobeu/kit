@@ -204,6 +204,7 @@ export async function render_response({
 		const attributes = [];
 		if (options.dev) attributes.push(' data-sveltekit');
 		if (csp.style_needs_nonce) attributes.push(` nonce="${csp.nonce}"`);
+		if (csp.report_only_style_needs_nonce) attributes.push(` nonce="${csp.report_only_nonce}"`);
 
 		csp.add_style(content);
 
@@ -220,6 +221,10 @@ export async function render_response({
 
 			if (csp.style_needs_nonce) {
 				attributes.push(`nonce="${csp.nonce}"`);
+      }
+      
+      if (csp.report_only_style_needs_nonce) {
+				attributes.push(`nonce="${csp.report_only_nonce}"`);
 			}
 
 			if (inline_styles.has(dep)) {
@@ -245,6 +250,10 @@ export async function render_response({
 			attributes.push(`nonce="${csp.nonce}"`);
 		}
 
+		if (csp.report_only_script_needs_nonce) {
+			attributes.push(`nonce="${csp.report_only_nonce}"`);
+		}
+
 		body += `\n\t\t<script ${attributes.join(' ')}>${init_app}</script>`;
 
 		body += serialized_data
@@ -266,7 +275,9 @@ export async function render_response({
 		csp.add_script(init_service_worker);
 
 		head += `
-			<script${csp.script_needs_nonce ? ` nonce="${csp.nonce}"` : ''}>${init_service_worker}</script>`;
+			<script${csp.script_needs_nonce ? ` nonce="${csp.nonce}"` : ''}${
+			csp.report_only_script_needs_nonce ? ` nonce="${csp.report_only_nonce}"` : ''
+		}>${init_service_worker}</script>`;
 	}
 
 	if (state.prerendering) {
@@ -307,6 +318,10 @@ export async function render_response({
 		const csp_header = csp.get_header();
 		if (csp_header) {
 			headers.set('content-security-policy', csp_header);
+		}
+		const report_only_header = csp.get_report_only_header();
+		if (report_only_header) {
+			headers.set('content-security-policy-report-only', report_only_header);
 		}
 	}
 
